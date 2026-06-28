@@ -1,5 +1,10 @@
-import { getRequestConfig } from 'next-intl/server';
+import createMiddleware from 'next-intl/middleware';
 
-export default getRequestConfig(async ({ locale }) => ({
-  messages: (await import(`./messages/${locale}.json`)).default,
-}));
+export default createMiddleware({
+  locales: ['fr', 'en'],
+  defaultLocale: 'fr',
+});
+
+export const config = {
+  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
+};
