@@ -1,4 +1,3 @@
-// Utility function to generate URL slugs
 export function generateSlug(text: string): string {
   return text
     .toLowerCase()
@@ -10,7 +9,6 @@ export function generateSlug(text: string): string {
     .replace(/-+/g, '-');
 }
 
-// Format pricing type for display
 export function formatPricingType(type: string): string {
   const mapping: Record<string, string> = {
     FREE: 'Gratuit',
@@ -21,7 +19,6 @@ export function formatPricingType(type: string): string {
   return mapping[type] || type;
 }
 
-// Calculate average rating
 export function calculateAverageRating(ratings: { score: number }[]): number {
   if (ratings.length === 0) return 0;
   const sum = ratings.reduce((acc, rating) => acc + rating.score, 0);
