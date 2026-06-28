@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String?
+  image     String?
+  password  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  role      UserRole   @default(USER)
+  favorites Favorite[]
+  comments  Comment[]
+  ratings   Rating[]
+  comparisons Comparison[]
+  @@index([email])
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  icon        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  translations CategoryTranslation[]
+  tools        Tool[]
+  @@index([slug])
+}
+
+model CategoryTranslation {
+  id         String   @id @default(cuid())
+  language   String   @default("fr")
+  name       String
+  description String?
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  @@unique([categoryId, language])
+  @@index([language])
+}
+
+model Tool {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  logo          String?
+  website       String?
+  sourceCode    String?
+  pricing       PricingType @default(FREE)
+  isAI          Boolean   @default(false)
+  isFeatured    Boolean   @default(false)
+  isVerified    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  categoryId    String
+  category      Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  translations  ToolTranslation[]
+  tags          Tag[]
+  favorites     Favorite[]
+  comments      Comment[]
+  ratings       Rating[]
+  alternatives  ToolAlternative[] @relation("tool")
+  alternativeOf ToolAlternative[] @relation("alternative")
+  comparisons   ComparisonItem[]
+  cpgeResources CPGEResource[]
+  @@index([categoryId])
+  @@index([slug])
+  @@index([pricing])
+  @@index([isAI])
+}
+
+enum PricingType {
+  FREE
+  FREEMIUM
+  PAID
+  OPEN_SOURCE
+}
+
+model ToolTranslation {
+  id          String   @id @default(cuid())
+  language    String   @default("fr")
+  name        String
+  description String
+  advantages  String[] @default([])
+  disadvantages String[] @default([])
+  toolId      String
+  tool        Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  @@unique([toolId, language])
+  @@index([language])
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  slug  String @unique
+  tools Tool[]
+  translations TagTranslation[]
+  @@index([slug])
+}
+
+model TagTranslation {
+  id        String   @id @default(cuid())
+  language  String   @default("fr")
+  name      String
+  tagId     String
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([tagId, language])
+}
+
+model ToolAlternative {
+  id            String   @id @default(cuid())
+  toolId        String
+  tool          Tool     @relation("tool", fields: [toolId], references: [id], onDelete: Cascade)
+  alternativeId String
+  alternative   Tool     @relation("alternative", fields: [alternativeId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  @@unique([toolId, alternativeId])
+  @@index([toolId])
+  @@index([alternativeId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId, toolId])
+  @@index([userId])
+  @@index([toolId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  isModerated Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([userId])
+  @@index([toolId])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  score     Int
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([userId, toolId])
+  @@index([userId])
+  @@index([toolId])
+  @@index([score])
+}
+
+model Comparison {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String?
+  items     ComparisonItem[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([userId])
+}
+
+model ComparisonItem {
+  id           String     @id @default(cuid())
+  comparisonId String
+  comparison   Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  toolId       String
+  tool         Tool       @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  order        Int
+  @@unique([comparisonId, toolId])
+  @@index([comparisonId])
+}
+
+model CPGEResource {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  exam        CPGEExam
+  filiere     CPGEFiliere
+  year        Int
+  subject     String
+  testType    String?
+  toolId      String
+  tool        Tool        @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  fileUrl     String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  translations CPGEResourceTranslation[]
+  @@index([exam])
+  @@index([filiere])
+  @@index([year])
+  @@index([toolId])
+}
+
+enum CPGEExam {
+  CCINP
+  MINES_PONTS
+  CENTRALE_SUPELEC
+  E3A_POLYTECH
+  X_ENS
+}
+
+enum CPGEFiliere {
+  MP
+  PC
+  PSI
+  PT
+  TSI
+}
+
+model CPGEResourceTranslation {
+  id         String        @id @default(cuid())
+  language   String        @default("fr")
+  title      String
+  description String?
+  resourceId String
+  resource   CPGEResource  @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  createdAt  DateTime      @default(now())
+  @@unique([resourceId, language])
+}
